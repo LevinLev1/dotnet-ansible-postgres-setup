@@ -1,0 +1,6 @@
+---
+- name: Restart service
+  systemd:
+    name: test
+    state: restarted
+    daemon_reload: yes

@@ -1,0 +1,15 @@
+[Unit]
+Description=Test Service
+After=network.target
+
+[Service]
+Type=simple
+User={{ service_user }}
+WorkingDirectory={{ service_dir }}
+ExecStart=/usr/bin/dotnet {{ service_dir }}/TEST.dll
+Restart=always
+RestartSec=5
+Environment={{ environment_vars | join(' ') }}
+
+[Install]
+WantedBy=multi-user.target

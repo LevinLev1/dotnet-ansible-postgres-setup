@@ -1,0 +1,65 @@
+---
+- name: Stop existing service
+  systemd:
+    name: test
+    state: stopped
+    enabled: no
+    daemon_reload: yes
+  ignore_errors: yes
+
+- name: Check if backup directory exists
+  stat:
+    path: "{{ service_dir }}_backup"
+  register: backup_dir_stat
+
+- name: Remove old backup if exists
+  file:
+    path: "{{ service_dir }}_backup"
+    state: absent
+  when: backup_dir_stat.stat.exists
+
+- name: Create backup of current version
+  command: "mv {{ service_dir }} {{ service_dir }}_backup"
+  args:
+    removes: "{{ service_dir }}"
+  register: backup_result
+  changed_when: backup_result.rc == 0
+  failed_when: backup_result.rc != 0 and 'No such file' not in backup_result.stderr
+
+- name: Create new service directory
+  file:
+    path: "{{ service_dir }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ service_user }}"
+    mode: '0755'
+
+- name: Deploy new version
+  copy:
+    src: "{{ item }}"
+    dest: "{{ service_dir }}/"
+    owner: "{{ service_user }}"
+    group: "{{ service_user }}"
+    mode: "{{ '0755' if item == 'TEST' else '0644' }}"
+  loop:
+    - TEST
+    - TEST.pdb
+    - appsettings.json
+
+- name: Create systemd service
+  template:
+    src: test.service.j2
+    dest: /etc/systemd/system/test.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart service
+
+- name: Enable and start service
+  systemd:
+    name: test
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+

@@ -1,0 +1,13 @@
+---
+- name: Update Test Service to v2
+  hosts: app_servers
+  become: yes
+  vars:
+    service_user: "leov"
+    service_dir: "/home/leov/app"  # Основная директория приложения
+    environment_vars:
+      - "ASPNETCORE_ENVIRONMENT=Production"
+      - "DOTNET_PRINT_TELEMETRY_MESSAGE=false"
+      
+  roles:
+    - update_app
